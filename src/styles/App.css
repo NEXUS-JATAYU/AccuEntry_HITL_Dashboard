@@ -1,0 +1,160 @@
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.content-area {
+  flex: 1;
+  padding: 0 24px 24px 24px;
+  overflow-y: auto;
+}
+
+.bottom-section {
+  display: flex;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.metrics-card {
+  flex: 2;
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.trends-card {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.card-header svg {
+  color: #64748b;
+}
+
+.card-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.metric-item {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.metric-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.metric-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.metric-value.blue {
+  color: #3b82f6;
+}
+
+.metric-value.green {
+  color: #22c55e;
+}
+
+.trend-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.trend-item:last-child {
+  border-bottom: none;
+}
+
+.trend-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.trend-label {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.trend-value {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.trend-value.positive {
+  color: #22c55e;
+}
+
+.trend-bar {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.trend-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.trend-fill.blue {
+  background: #3b82f6;
+}
+
+.trend-fill.yellow {
+  background: #f59e0b;
+}
+
+.view-analytics-btn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-analytics-btn:hover {
+  background: #f8fafc;
+  color: #1e293b;
+}
