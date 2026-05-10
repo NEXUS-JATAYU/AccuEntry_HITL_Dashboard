@@ -7,6 +7,7 @@ import AccuEntryNavbar from './components/AccuEntryNavbar.jsx';
 import Table from './components/Table.jsx';
 import './styles/App.css';
 import './styles/dashboard.css';
+import keycloak from './keycloak.js';
 
 const STAGE_LABELS = {
   data_capture: 'Data Capture',
@@ -174,9 +175,16 @@ function App() {
 
   const fetchDashboardData = async () => {
     try {
+      // Ensure the token is valid, refreshing if it expires in less than 30 seconds
+      await keycloak.updateToken(30);
+      
+      const headers = {
+        'Authorization': `Bearer ${keycloak.token}`
+      };
+
       const [casesResp, summaryResp] = await Promise.all([
-        fetch(`${BACKEND_URL}/hitl/cases?include_in_progress=true`),
-        fetch(`${BACKEND_URL}/hitl/summary?include_in_progress=true`),
+        fetch(`${BACKEND_URL}/hitl/cases?include_in_progress=true`, { headers }),
+        fetch(`${BACKEND_URL}/hitl/summary?include_in_progress=true`, { headers }),
       ]);
 
       if (!casesResp.ok) {
@@ -286,7 +294,11 @@ function App() {
     setCaseLoading(true);
     setCaseError('');
     try {
-      const resp = await fetch(`${BACKEND_URL}/hitl/cases/${encodeURIComponent(sessionId)}/details`);
+      await keycloak.updateToken(30);
+      const headers = {
+        'Authorization': `Bearer ${keycloak.token}`
+      };
+      const resp = await fetch(`${BACKEND_URL}/hitl/cases/${encodeURIComponent(sessionId)}/details`, { headers });
       if (!resp.ok) {
         throw new Error(`Failed to load details (${resp.status})`);
       }
@@ -309,8 +321,16 @@ function App() {
   };
 
   return (
-        <div className="app-header">
-      <Header />
+    <div className="app-header">
+      <div style={{ position: 'relative' }}>
+        <Header />
+        <button 
+          onClick={() => keycloak.logout()}
+          style={{ position: 'absolute', top: '16px', right: '16px', padding: '6px 12px', backgroundColor: '#334155', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', zIndex: 100 }}
+        >
+          Logout
+        </button>
+      </div>
       <AccuEntryNavbar />
       <div className="bottom-section">
             <div className="metrics-card">
