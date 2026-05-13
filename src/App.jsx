@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from './components/Sidebar.jsx';
+import Header from './components/Header.jsx';
 import Topbar from './components/Topbar.jsx';
+import MainSidebar from './components/Main-sidebar.jsx';
+import AccuEntryNavbar from './components/AccuEntryNavbar.jsx';
 import Table from './components/Table.jsx';
 import './styles/App.css';
+import './styles/dashboard.css';
+import keycloak from './keycloak.js';
 
 const STAGE_LABELS = {
   data_capture: 'Data Capture',
@@ -170,9 +175,16 @@ function App() {
 
   const fetchDashboardData = async () => {
     try {
+      // Ensure the token is valid, refreshing if it expires in less than 30 seconds
+      await keycloak.updateToken(30);
+      
+      const headers = {
+        'Authorization': `Bearer ${keycloak.token}`
+      };
+
       const [casesResp, summaryResp] = await Promise.all([
-        fetch(`${BACKEND_URL}/hitl/cases?include_in_progress=true`),
-        fetch(`${BACKEND_URL}/hitl/summary?include_in_progress=true`),
+        fetch(`${BACKEND_URL}/hitl/cases?include_in_progress=true`, { headers }),
+        fetch(`${BACKEND_URL}/hitl/summary?include_in_progress=true`, { headers }),
       ]);
 
       if (!casesResp.ok) {
@@ -282,7 +294,11 @@ function App() {
     setCaseLoading(true);
     setCaseError('');
     try {
-      const resp = await fetch(`${BACKEND_URL}/hitl/cases/${encodeURIComponent(sessionId)}/details`);
+      await keycloak.updateToken(30);
+      const headers = {
+        'Authorization': `Bearer ${keycloak.token}`
+      };
+      const resp = await fetch(`${BACKEND_URL}/hitl/cases/${encodeURIComponent(sessionId)}/details`, { headers });
       if (!resp.ok) {
         throw new Error(`Failed to load details (${resp.status})`);
       }
@@ -305,51 +321,18 @@ function App() {
   };
 
   return (
-    <div className="app">
-      <Sidebar
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        selectedStatuses={selectedStatuses}
-        onStatusChange={handleStatusChange}
-        selectedModules={selectedModules}
-        onModuleChange={handleModuleChange}
-        statusOptions={statusOptions}
-        modulesData={moduleOptions}
-      />
-      <main className="main-content">
-        <Topbar
-          selectAll={selectAll}
-          onSelectAllChange={handleSelectAllChange}
-          onExpandAll={fetchDashboardData}
-        />
-        <div className="content-area">
-          {loadError && (
-            <div style={{ color: '#dc2626', marginBottom: '12px', fontWeight: 600 }}>
-              {loadError}
-            </div>
-          )}
-          {loading && (
-            <div style={{ color: '#334155', marginBottom: '12px' }}>
-              Loading HITL dashboard data...
-            </div>
-          )}
-          <Table
-            data={filteredData}
-            selectedRows={selectedRows}
-            onSelectRow={handleSelectRow}
-            selectAll={selectAll}
-            onOpenDetails={handleOpenDetails}
-          />
-
-          <CaseDetailsModal
-            isOpen={Boolean(selectedCase)}
-            onClose={handleCloseDetails}
-            loading={caseLoading}
-            error={caseError}
-            details={caseDetails || { case: selectedCase }}
-          />
-
-          <div className="bottom-section">
+    <div className="app-header">
+      <div style={{ position: 'relative' }}>
+        <Header />
+        <button 
+          onClick={() => keycloak.logout()}
+          style={{ position: 'absolute', top: '16px', right: '16px', padding: '6px 12px', backgroundColor: '#334155', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', zIndex: 100 }}
+        >
+          Logout
+        </button>
+      </div>
+      <AccuEntryNavbar />
+      <div className="bottom-section">
             <div className="metrics-card">
               <div className="card-header">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -409,9 +392,54 @@ function App() {
               <button className="view-analytics-btn" onClick={fetchDashboardData}>REFRESH LIVE DATA</button>
             </div>
           </div>
+    <div className="app">
+      <Sidebar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        selectedStatuses={selectedStatuses}
+        onStatusChange={handleStatusChange}
+        selectedModules={selectedModules}
+        onModuleChange={handleModuleChange}
+        statusOptions={statusOptions}
+        modulesData={moduleOptions}
+      />
+      <main className="main-content">
+        <Topbar
+          selectAll={selectAll}
+          onSelectAllChange={handleSelectAllChange}
+          onExpandAll={fetchDashboardData}
+        />
+        <div className="content-area">
+          {loadError && (
+            <div style={{ color: '#dc2626', marginBottom: '12px', fontWeight: 600 }}>
+              {loadError}
+            </div>
+          )}
+          {loading && (
+            <div style={{ color: '#334155', marginBottom: '12px' }}>
+              Loading HITL dashboard data...
+            </div>
+          )}
+          <Table
+            data={filteredData}
+            selectedRows={selectedRows}
+            onSelectRow={handleSelectRow}
+            selectAll={selectAll}
+            onOpenDetails={handleOpenDetails}
+          />
+
+          <CaseDetailsModal
+            isOpen={Boolean(selectedCase)}
+            onClose={handleCloseDetails}
+            loading={caseLoading}
+            error={caseError}
+            details={caseDetails || { case: selectedCase }}
+          />
         </div>
       </main>
     </div>
+    </div>
+
   );
 }
 
