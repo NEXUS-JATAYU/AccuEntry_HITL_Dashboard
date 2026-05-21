@@ -1,92 +1,106 @@
-import React, { useState } from 'react';
-import '../styles/AccuEntryNavbar.css';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import {
+  Menu,
+  Search,
+  History,
+  Bell,
+  User,
+  Settings,
+} from 'lucide-react';
 import MainSidebar from './Main-sidebar.jsx';
+import { cn } from '../lib/cn';
 
 export default function AccuEntryNavbar() {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-const toggleSidebar = () => {
-  setIsSidebarOpen(!isSidebarOpen);
-};
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
+
+  const toggleSidebar = () => setIsSidebarOpen((open) => !open);
 
   const handleSearch = () => {
     console.log('Search for:', searchValue);
   };
 
-  const handleSearchChange = (e) => {
-    setSearchValue(e.target.value);
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
   return (
-    <nav className="accuentry-navbar">
-      <div className="navbar-container">
-        <div className="navbar-left">
-            <button className="menu-btn" onClick={toggleSidebar}>
-                ☰
-                </button>
-                </div>
-                <MainSidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+    <nav className="border-b border-nexus-gold/20 bg-nexus-navy shadow-md">
+      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
+        <button
+          type="button"
+          className="rounded-lg p-2 text-white/90 transition-colors hover:bg-white/10"
+          onClick={toggleSidebar}
+          aria-label="Open menu"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <MainSidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
-        {/* Center: Search */}
-        <div className="navbar-center">
-          <div className="search-container">
-            <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.35-4.35"></path>
-            </svg>
+        <div className="flex flex-1 flex-wrap items-center gap-3">
+          <div className="relative min-w-0 flex-1">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50"
+              aria-hidden
+            />
             <input
               type="text"
-              className="search-input"
+              className="w-full rounded-xl border border-white/10 bg-white/10 py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-white/50 focus:border-nexus-gold/40 focus:bg-white/15 focus:outline-none"
               placeholder="Search obligations..."
               value={searchValue}
-              onChange={handleSearchChange}
-              onKeyPress={handleKeyPress}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             />
           </div>
-          <button className="run-search-btn" onClick={handleSearch}>
+          <motion.button
+            type="button"
+            onClick={handleSearch}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="shrink-0 rounded-xl bg-nexus-gold px-4 py-2.5 text-sm font-semibold text-nexus-navy transition-colors hover:bg-nexus-gold-light"
+          >
             Run New Search
-          </button>
+          </motion.button>
         </div>
 
-        {/* Right: Icons and Actions */}
-        <div className="navbar-right">
-          <button className="navbar-icon-btn history-btn" title="History">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            History
+        <div className="hidden items-center gap-1 sm:flex">
+          <button
+            type="button"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            title="History"
+          >
+            <History className="h-4 w-4" aria-hidden />
+            <span className="hidden lg:inline">History</span>
           </button>
 
-          <button className="navbar-icon-btn notification-btn" title="Notifications">
-            <div className="notification-wrapper">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-              </svg>
-              <span className="notification-badge">1</span>
-            </div>
+          <button
+            type="button"
+            className="relative rounded-lg p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            title="Notifications"
+          >
+            <Bell className="h-5 w-5" />
+            <motion.span
+              className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-citi-red text-[10px] font-bold text-white"
+              animate={{ scale: [1, 1.15, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+            >
+              1
+            </motion.span>
           </button>
 
-          <button className="navbar-icon-btn profile-btn" title="Profile">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
+          <button
+            type="button"
+            className={cn(
+              'rounded-lg p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white'
+            )}
+            title="Profile"
+          >
+            <User className="h-5 w-5" />
           </button>
 
-          <button className="navbar-icon-btn settings-btn" title="Settings">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4 1.65 1.65 0 0 0 7.18 19.67l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-            </svg>
+          <button
+            type="button"
+            className="rounded-lg p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            title="Settings"
+          >
+            <Settings className="h-5 w-5" />
           </button>
         </div>
       </div>

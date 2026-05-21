@@ -1,113 +1,199 @@
-import React from 'react';
-import '../styles/Sidebar.css';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  LayoutGrid,
+  ClipboardList,
+  SlidersHorizontal,
+  FileText,
+  ChevronDown,
+  Plus,
+  Search,
+  Filter,
+} from 'lucide-react';
+import { cn } from '../lib/cn';
 
-function Sidebar({ 
-  searchTerm, 
-  onSearchChange, 
-  selectedStatuses, 
-  onStatusChange, 
-  selectedModules, 
+const navItems = [
+  { id: 'overview', label: 'Overview', icon: LayoutGrid },
+  { id: 'obligations', label: 'Obligations', icon: ClipboardList },
+  { id: 'controls', label: 'Controls', icon: SlidersHorizontal },
+  { id: 'evidence', label: 'Evidence', icon: FileText },
+];
+
+function FilterGroup({ title, open, onToggle, children }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-gray-200/80 bg-white">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 transition-colors hover:bg-gray-50"
+      >
+        {title}
+        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
+          <ChevronDown className="h-4 w-4 text-gray-400" aria-hidden />
+        </motion.span>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-2 border-t border-gray-100 px-3 py-3">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function Sidebar({
+  searchTerm,
+  onSearchChange,
+  selectedStatuses,
+  onStatusChange,
+  selectedModules,
   onModuleChange,
   statusOptions,
   modulesData,
 }) {
+  const [statusOpen, setStatusOpen] = useState(true);
+  const [modulesOpen, setModulesOpen] = useState(true);
+  const [activeNav, setActiveNav] = useState('obligations');
+
   return (
-    <aside className="sidebar">
-      <nav className="nav-section">
-        <button className="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="7" height="7" rx="1" />
-            <rect x="14" y="3" width="7" height="7" rx="1" />
-            <rect x="3" y="14" width="7" height="7" rx="1" />
-            <rect x="14" y="14" width="7" height="7" rx="1" />
-          </svg>
-          OVERVIEW
-        </button>
-        <button className="nav-item active">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
-            <rect x="9" y="3" width="6" height="4" rx="1" />
-          </svg>
-          OBLIGATIONS
-        </button>
-        <button className="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
-          </svg>
-          CONTROLS
-        </button>
-        <button className="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-            <polyline points="14,2 14,8 20,8" />
-          </svg>
-          EVIDENCE
-        </button>
+    <motion.aside
+      initial={{ x: -16, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ type: 'spring', stiffness: 280, damping: 28, delay: 0.1 }}
+      className="flex w-[260px] shrink-0 flex-col border-r border-gray-200/80 bg-white"
+    >
+      {/* Nav */}
+      <nav className="shrink-0 space-y-0.5 p-3">
+        <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+          Workspace
+        </p>
+        {navItems.map(({ id, label, icon: Icon }) => {
+          const isActive = activeNav === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setActiveNav(id)}
+              className={cn(
+                'relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                isActive
+                  ? 'text-citi-dark-blue'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-citi-blue'
+              )}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="sidebar-active"
+                  className="absolute inset-0 rounded-lg border-l-[3px] border-citi-blue bg-citi-light-blue"
+                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                />
+              )}
+              <Icon
+                className={cn(
+                  'relative z-10 h-4 w-4 shrink-0',
+                  isActive ? 'text-citi-blue' : 'text-gray-400'
+                )}
+                aria-hidden
+              />
+              <span className="relative z-10">{label}</span>
+            </button>
+          );
+        })}
       </nav>
 
-      <div className="filter-section">
-        <input
-          type="text"
-          className="search-input"
-          placeholder="Enter search terms or ID..."
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-        />
+      {/* Filters — scrollable */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3 pt-0">
+        <div className="flex items-center gap-2 px-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+          <Filter className="h-3 w-3" aria-hidden />
+          Filters
+        </div>
 
-        <div className="filter-group">
-          <div className="filter-header">
-            <span className="filter-title">Obligation Status</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="6,9 12,15 18,9" />
-            </svg>
-          </div>
-          <div className="filter-options">
-            {statusOptions.map((status) => (
-              <div className="filter-option" key={status.id}>
+        <div className="relative">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+            aria-hidden
+          />
+          <input
+            type="text"
+            className="w-full rounded-xl border border-gray-200 bg-nexus-surface py-2.5 pl-9 pr-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-citi-blue focus:outline-none focus:ring-2 focus:ring-citi-blue/20"
+            placeholder="Search by name or ID..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+          />
+        </div>
+
+        <FilterGroup
+          title="Obligation Status"
+          open={statusOpen}
+          onToggle={() => setStatusOpen((o) => !o)}
+        >
+          {statusOptions.length === 0 ? (
+            <p className="text-xs text-gray-400">No statuses loaded</p>
+          ) : (
+            statusOptions.map((status) => (
+              <label
+                key={status.id}
+                className="flex cursor-pointer items-center gap-2.5 rounded-lg py-1 text-sm text-gray-700 hover:text-citi-dark-blue"
+              >
                 <input
                   type="checkbox"
-                  id={`status-${status.id}`}
+                  className="h-4 w-4 rounded border-gray-300 text-citi-blue focus:ring-citi-blue/30"
                   checked={selectedStatuses.includes(status.id)}
                   onChange={() => onStatusChange(status.id)}
                 />
-                <label htmlFor={`status-${status.id}`}>{status.label}</label>
-              </div>
-            ))}
-          </div>
-        </div>
+                {status.label}
+              </label>
+            ))
+          )}
+        </FilterGroup>
 
-        <div className="filter-group">
-          <div className="filter-header">
-            <span className="filter-title">Modules</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="6,9 12,15 18,9" />
-            </svg>
-          </div>
-          <div className="filter-options">
-            {modulesData.map((module) => (
-              <div className="filter-option" key={module.id}>
+        <FilterGroup
+          title="Modules"
+          open={modulesOpen}
+          onToggle={() => setModulesOpen((o) => !o)}
+        >
+          {modulesData.length === 0 ? (
+            <p className="text-xs text-gray-400">No modules loaded</p>
+          ) : (
+            modulesData.map((module) => (
+              <label
+                key={module.id}
+                className="flex cursor-pointer items-center gap-2.5 rounded-lg py-1 text-sm text-gray-700 hover:text-citi-dark-blue"
+              >
                 <input
                   type="checkbox"
-                  id={`module-${module.id}`}
+                  className="h-4 w-4 rounded border-gray-300 text-citi-blue focus:ring-citi-blue/30"
                   checked={selectedModules.includes(module.id)}
                   onChange={() => onModuleChange(module.id)}
                 />
-                <label htmlFor={`module-${module.id}`}>{module.label}</label>
-              </div>
-            ))}
-          </div>
-        </div>
+                {module.label}
+              </label>
+            ))
+          )}
+        </FilterGroup>
       </div>
 
-      <button className="new-assessment-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-        New Assessment
-      </button>
-    </aside>
+      {/* CTA */}
+      <div className="shrink-0 border-t border-gray-100 p-3">
+        <motion.button
+          type="button"
+          whileHover={{ scale: 1.02, boxShadow: '0 0 16px rgba(201,150,59,0.3)' }}
+          whileTap={{ scale: 0.98 }}
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-nexus-gold px-4 py-2.5 text-sm font-semibold text-nexus-navy"
+        >
+          <Plus className="h-4 w-4" aria-hidden />
+          New Assessment
+        </motion.button>
+      </div>
+    </motion.aside>
   );
 }
 
