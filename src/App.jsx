@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import Sidebar from './components/Sidebar.jsx';
 import DashboardHeader from './components/DashboardHeader.jsx';
@@ -28,6 +28,14 @@ const sectionVariants = {
 
 function App() {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+  const HITL_API_KEY = import.meta.env.VITE_HITL_API_KEY || '';
+
+  const hitlHeaders = async () => {
+    await keycloak.updateToken(30);
+    const headers = { Authorization: `Bearer ${keycloak.token}` };
+    if (HITL_API_KEY) headers['X-HITL-API-Key'] = HITL_API_KEY;
+    return headers;
+  };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [navbarSearch, setNavbarSearch] = useState('');
@@ -59,8 +67,7 @@ function App() {
 
   const fetchDashboardData = async () => {
     try {
-      await keycloak.updateToken(30);
-      const headers = { Authorization: `Bearer ${keycloak.token}` };
+      const headers = await hitlHeaders();
 
       const [casesResp, summaryResp] = await Promise.all([
         fetch(`${BACKEND_URL}/hitl/cases?include_in_progress=true`, { headers }),
@@ -168,8 +175,7 @@ function App() {
     setCaseLoading(true);
     setCaseError('');
     try {
-      await keycloak.updateToken(30);
-      const headers = { Authorization: `Bearer ${keycloak.token}` };
+      const headers = await hitlHeaders();
       const resp = await fetch(
         `${BACKEND_URL}/hitl/cases/${encodeURIComponent(sessionId)}/details`,
         { headers }
@@ -276,3 +282,4 @@ function App() {
 }
 
 export default App;
+
