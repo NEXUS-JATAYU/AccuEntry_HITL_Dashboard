@@ -62,6 +62,22 @@ function App() {
       await keycloak.updateToken(30);
       const headers = { Authorization: `Bearer ${keycloak.token}` };
 
+      // Register employee
+      if (keycloak.tokenParsed) {
+        try {
+          await fetch(`${BACKEND_URL}/hitl/employee/login`, {
+            method: 'POST',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: keycloak.tokenParsed.email || keycloak.tokenParsed.preferred_username || 'manager@accuentry.com',
+              name: keycloak.tokenParsed.name || keycloak.tokenParsed.preferred_username || 'Compliance Manager',
+            })
+          });
+        } catch (e) {
+          console.error('Employee registration failed:', e);
+        }
+      }
+
       const [casesResp, summaryResp] = await Promise.all([
         fetch(`${BACKEND_URL}/hitl/cases?include_in_progress=true`, { headers }),
         fetch(`${BACKEND_URL}/hitl/summary?include_in_progress=true`, { headers }),
