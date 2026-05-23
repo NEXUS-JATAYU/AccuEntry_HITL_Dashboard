@@ -16,6 +16,17 @@ const STAGE_LABELS = {
   rejected: 'Rejected',
 };
 
+const EVENT_LABELS = {
+  decision_summary: 'Stage Update',
+  decision_agent_start: 'Decision Started',
+  decision_agent_complete: 'Decision Made',
+  decision_agent_error: 'Decision Error',
+  queued_for_review: 'Queued For Review',
+  application_rejected: 'Application Rejected',
+  pending_docs_requested: 'Documents Requested',
+  escalated_to_compliance: 'Escalated',
+};
+
 const toLabel = (value) =>
   String(value || '')
     .replace(/[_-]+/g, ' ')
@@ -25,23 +36,69 @@ const toLabel = (value) =>
 
 const stageLabel = (value) => STAGE_LABELS[value] || toLabel(value) || 'Unknown';
 
-const auditPoints = (log) => {
-  const output = log?.output_payload || {};
-  const points = [];
-  points.push(log?.friendly_text || 'No friendly explanation available.');
-  if (log?.stage) points.push(`Stage: ${stageLabel(log.stage)}`);
-  if (log?.decision_source && String(log.decision_source).toLowerCase() !== 'llm') {
-    points.push(`Source: ${toLabel(log.decision_source)}`);
+const eventLabel = (value) => EVENT_LABELS[value] || toLabel(value) || 'Audit Event';
+
+const statusBadgeClass = (status) => {
+  const key = String(status || '').toLowerCase();
+  if (key === 'approve' || key === 'approved') {
+    return 'bg-emerald-50 text-emerald-700 ring-emerald-200';
   }
-  if (output?.action) points.push(`Action: ${toLabel(output.action)}`);
-  if (output?.reason) points.push(`Reason: ${output.reason}`);
-  return points;
+  if (key === 'reject' || key === 'rejected') {
+    return 'bg-red-50 text-red-700 ring-red-200';
+  }
+  if (key === 'pending') {
+    return 'bg-amber-50 text-amber-700 ring-amber-200';
+  }
+  return 'bg-slate-100 text-slate-600 ring-slate-200';
+};
+
+const statusLabel = (status) => {
+  const key = String(status || '').toLowerCase();
+  if (key === 'approve') return 'Approved';
+  if (key === 'reject' || key === 'rejected') return 'Rejected';
+  if (key === 'pending') return 'Pending';
+  if (key === 'undecided') return 'In Progress';
+  return toLabel(status) || 'Unknown';
+};
+
+const filterAdjacentDuplicates = (logs) => {
+  if (!logs.length) return logs;
+  const filtered = [];
+  for (let i = 0; i < logs.length; i += 1) {
+    const curr = logs[i];
+    const prev = filtered[filtered.length - 1];
+    if (
+      prev &&
+      curr.event_type === 'decision_summary' &&
+      prev.event_type === 'decision_agent_complete' &&
+      String(prev.stage) === String(curr.stage) &&
+      String(prev.status || prev.decision).toLowerCase() ===
+        String(curr.status || curr.decision).toLowerCase()
+    ) {
+      const prevTime = prev.created_at ? new Date(prev.created_at).getTime() : 0;
+      const currTime = curr.created_at ? new Date(curr.created_at).getTime() : 0;
+      if (Math.abs(currTime - prevTime) <= 10000) {
+        continue;
+      }
+    }
+    filtered.push(curr);
+  }
+  return filtered;
+};
+
+const auditDisplayLine = (log) => {
+  if (log?.display_line) return log.display_line;
+  const output = log?.output_payload || {};
+  if (String(output?.action || log?.decision).toLowerCase() === 'undecided' && log?.stage) {
+    return `${stageLabel(log.stage)}: review in progress.`;
+  }
+  return log?.friendly_text || 'No summary available.';
 };
 
 export default function CaseDetailsModal({ isOpen, onClose, loading, error, details }) {
   const caseData = details?.case || {};
   const overall = details?.overall || {};
-  const auditLogs = details?.audit_logs || [];
+  const auditLogs = filterAdjacentDuplicates(details?.audit_logs || []);
   const amlChecks = details?.aml_checks || [];
   const complianceFlagged = Boolean(
     caseData?.flagged ||
@@ -173,31 +230,51 @@ export default function CaseDetailsModal({ isOpen, onClose, loading, error, deta
                       <p className="text-sm text-slate-500">No decision logs found.</p>
                     )}
                     <div className="space-y-3">
-                      {auditLogs.map((log) => (
-                        <div
-                          key={log.id}
-                          className="rounded-lg border border-slate-200 bg-white p-4"
-                        >
-                          <div className="flex items-center justify-between text-sm">
-                            <strong className="text-nexus-navy">
-                              {toLabel(log.event_type)}
-                            </strong>
-                            <span className="text-xs text-slate-500">
-                              {log.created_at
-                                ? new Date(log.created_at).toLocaleString()
-                                : 'n/a'}
-                            </span>
+                      {auditLogs.map((log) => {
+                        const status = log.status || log.decision || 'undecided';
+                        return (
+                          <div
+                            key={log.id}
+                            className="rounded-lg border border-slate-200 bg-white p-4"
+                          >
+                            <div className="flex items-start justify-between gap-3 text-sm">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <strong className="text-nexus-navy">
+                                    {eventLabel(log.event_type)}
+                                  </strong>
+                                  <span
+                                    className={cn(
+                                      'inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset',
+                                      statusBadgeClass(status)
+                                    )}
+                                  >
+                                    {statusLabel(status)}
+                                  </span>
+                                </div>
+                                <p className="mt-1.5 text-sm text-slate-600">
+                                  {auditDisplayLine(log)}
+                                </p>
+                              </div>
+                              <span className="shrink-0 text-xs text-slate-500">
+                                {log.created_at
+                                  ? new Date(log.created_at).toLocaleString()
+                                  : 'n/a'}
+                              </span>
+                            </div>
+                            {log.log_hash && (
+                              <details className="mt-2">
+                                <summary className="cursor-pointer text-xs text-slate-400 hover:text-slate-600">
+                                  Technical details
+                                </summary>
+                                <p className="mt-1 truncate font-mono text-xs text-slate-400">
+                                  Hash: {log.log_hash}
+                                </p>
+                              </details>
+                            )}
                           </div>
-                          <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-slate-600">
-                            {auditPoints(log).map((point, pIdx) => (
-                              <li key={`${log.id}-${pIdx}`}>{point}</li>
-                            ))}
-                          </ul>
-                          <p className="mt-2 truncate font-mono text-xs text-slate-400">
-                            Hash: {log.log_hash}
-                          </p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </section>
                 </div>
